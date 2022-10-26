@@ -61,7 +61,7 @@ mkdir -p "$CONFIGDIR"
 
 CONFIGFILE="$CONFIGDIR/${PROGRAM_NAME}rc"
 if [ ! -e "$CONFIGFILE" ]; then
-    echo -e "$PROGRAM_NAME configuration file\n" > "$CONFIGFILE"
+    echo -e "# $PROGRAM_NAME configuration file\n" > "$CONFIGFILE"
 fi
 
 BUILD_SCRIPT="$DATADIR/${PROGRAM_NAME}-build"
@@ -71,7 +71,7 @@ sed -i "/^CONFIGFILE/c\CONFIGFILE=$CONFIGFILE" "$PROGRAM_NAME"
 install -Dm755 "$PROGRAM_NAME" -t $BINDIR
 install -Dm644 "${PROGRAM_NAME}-build" -t $DATADIR
 
-cat > "$CONFIGFILE" << EOF
+cat >> "$CONFIGFILE" << EOF
 DATADIR="$DATADIR"
 BINDIR="$BINDIR"
 CACHEDIR="$CACHEDIR"
