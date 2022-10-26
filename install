@@ -6,7 +6,7 @@ PROGRAM_NAME="idk"
 
 # check dependencies
 dependecies=(
-    "wget"
+    'wget'
     'gzip'
 )
 
@@ -18,7 +18,7 @@ for p in "${dependencies[@]}"; do
 done
 
 # data
-if [ -z "$XDG_DATA_HOME" ]; then
+if [ -z ${XDG_DATA_HOME+x} ]; then
     DATADIR="$XDG_DATA_HOME/$PROGRAM_NAME"
 else
     DATADIR="$HOME/.local/share/$PROGRAM_NAME"
@@ -38,7 +38,7 @@ if [[ ! ":$PATH:" == *":$BINDIR:"* ]]; then
 fi
 
 # cache
-if [ -z "$XDG_CACHE_HOME" ]; then
+if [ -z ${XDG_CACHE_HOME+x} ]; then
     CACHEDIR="$XDG_CACHE_HOME/$PROGRAM_NAME"
 else
     CACHEDIR="$HOME/.cache/$PROGRAM_NAME"
@@ -51,7 +51,7 @@ gzip -q -d -c < "$CACHEDIR/packages.gz"  > "$CACHEDIR"
 AURDB="$CACHEDIR/packages"
 
 # create config file
-if [ -z "$XDG_CONFIG_HOME" ]; then
+if [ -z ${XDG_CONFIG_HOME+x} ]; then
     CONFIGDIR="$XDG_CONFIG_HOME/$PROGRAM_NAME"
 else
     CONFIGDIR="$HOME/.config/$PROGRAM_NAME"
