@@ -1,0 +1,107 @@
+#!/bin/bash
+set -euxo pipefail
+
+function error {
+    echo -e "${1}\n" 1>&2
+    exit 1
+}
+
+function get_pkgname {
+    grep "pkgname" PKGBUILD | head -n1 | cut -d"=" -f2
+}
+
+function get_pkgver {
+    grep "pkgver" PKGBUILD | head -n1 | cut -d"=" -f2
+}
+
+function get_pkgrel {
+    grep "pkgrel" PKGBUILD | head -n1 | cut -d"=" -f2
+}
+
+function get_arch {
+    grep "arch" PKGBUILD | head -n1 | cut -d"=" -f2
+}
+
+function get_user {
+    last | head -n1 | cut -d" " -f1 | xargs
+}
+
+function remove_whitespaces {
+    # for (( i=0; i<${#temp[@]}; i++ )) ; do echo -e "before=\"${temp[$i]}\"\t" && temp[$i]=$(echo "${temp[$i]}" | xargs) && echo -e "after=\"${temp[$i]}\"\n" ; done
+    local -n temp=$1
+    for (( i=0; i<${#temp[@]}; i++ )) ; do 
+        temp[$i]=$(echo "${temp[$i]}" | xargs)
+    done
+}
+
+function _install_repo {
+    sudo -E pacman -S --quiet --noconfirm --noprogressbar "$1"
+}
+
+function _install_aur {
+    git clone --quiet https://aur.archlinux.org/"$1".git
+    cd "$1"
+
+    # if [ -e *.sig ] || [ -e *.asc ] || [ -e *.gpg ] ; then
+    # for key in *.sig *.asc *.gpg ; do 
+    #     import $key
+    # done
+    
+    # before building resolve package dependencies
+    readarray -t pkgs < <(makepkg --printsrcinfo | grep depends | cut -d"=" -f2)
+    remove_whitespaces pkgs
+
+    for pkg in "${pkgs[@]}" ; do 
+        if [ ! "$(pacman -Qqn "$pkg")" ] ; then
+            _install "$pkg"
+        fi
+    done
+
+    makechrootpkg -c -r "$CHROOTDIR"
+    
+    sudo -E pacman -U "$(get_pkgname)"-"$(get_pkgver)"-"$(get_pkgrel)"-"$(get_arch)".pkg.tar.zst
+
+    cd ..
+}
+
+function _install {
+    if pacman -Ssq "$1" | grep -q "^$1$"
+    then
+        _install_repo "$1"
+    else
+        _install_aur "$1"
+    fi    
+}
+
+
+### START ###
+
+# [ "$EUID" -ne 0 ] && error "Run as root!"
+
+# [ -e PKGBUILD ] || error "This must be run in a directory containing a PKGBUILD"
+
+parseargs "$@"
+
+#PKGNAME=$(get_pkgname)
+
+# check if devtools is installed
+if [ ! "$(pacman -Qq devtools 2>/dev/null)" ] ; then
+    echo -e "Package devtools not found, installing it..."
+    _install_repo devtools 2>/dev/null 1>/dev/null
+    echo -e "Done\n"
+fi
+
+# check if chroot directory already exists
+if [ ! -d "$CHROOTDIR" ] ; then 
+    echo -e "Chroot Directory $CHROOTDIR not found, creating it..."
+    mkdir -p "$CHROOTDIR"
+    export CHROOTDIR
+    mkarchroot "$CHROOTDIR"/root base-devel
+    arch-nspawn "$CHROOTDIR"/root pacman -Syu
+    echo -e "Done\n"
+fi
+
+# do something
+_install "$1"
+
+exit 0

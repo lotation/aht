@@ -1,0 +1,83 @@
+#!/bin/bash
+
+set -e -x
+
+PROGRAM_NAME="idk"
+
+# check dependencies
+dependecies=(
+    "wget"
+    'gzip'
+)
+
+for p in "${dependencies[@]}"; do
+    if ! command -v "$p" > /dev/null; then
+        echo "$p not found, please install it.\n" 1>&2
+        exit 1
+    fi    
+done
+
+# data
+if [ -z "$XDG_DATA_HOME" ]; then
+    DATADIR="$XDG_DATA_HOME/$PROGRAM_NAME"
+else
+    DATADIR="$HOME/.local/share/$PROGRAM_NAME"
+fi
+mkdir -p "$DATADIR"
+
+# binaries directory
+BINDIR="$HOME/.local/bin"
+
+if [ ! -d "$BINDIR" ]; then
+    mkdir -p "$BINDIR"
+fi
+
+if [[ ! ":$PATH:" == *":$BINDIR:"* ]]; then
+    echo "Add $BINDIR to \$PATH to correctly use $PROGRAM_NAME" 1>&2
+    exit 1
+fi
+
+# cache
+if [ -z "$XDG_CACHE_HOME" ]; then
+    CACHEDIR="$XDG_CACHE_HOME/$PROGRAM_NAME"
+else
+    CACHEDIR="$HOME/.cache/$PROGRAM_NAME"
+fi
+mkdir -p "$CACHEDIR"
+
+# init AUR packages database
+wget -q -P "$CACHEDIR" https://aur.archlinux.org/packages.gz
+gzip -q -d -c < "$CACHEDIR/packages.gz"  > "$CACHEDIR"
+AURDB="$CACHEDIR/packages"
+
+# create config file
+if [ -z "$XDG_CONFIG_HOME" ]; then
+    CONFIGDIR="$XDG_CONFIG_HOME/$PROGRAM_NAME"
+else
+    CONFIGDIR="$HOME/.config/$PROGRAM_NAME"
+fi
+mkdir -p "$CONFIGDIR"
+
+CONFIGFILE="$CONFIGDIR/${PROGRAM_NAME}rc"
+if [ ! -e "$CONFIGFile" ]; then
+    echo -e "$PROGRAM_NAME configuration file\n" > "$CONFIGFile"
+fi
+
+BUILD_SCRIPT="$DATADIR/${PROGRAM_NAME}-build"
+sed -i "/^CONFIGFILE/c\CONFIGFILE=$CONFIGFILE" "$PROGRAM_NAME"
+
+# install
+install -Dm755 "$PROGRAM_NAME" -t $BINDIR
+install -Dm644 "${PROGRAM_NAME}-build" -t $DATADIR
+
+cat > "$CONFIGFILE" << EOF
+DATADIR=$DATADIR
+BINDIR=$BINDIR
+CACHEDIR=$CACHEDIR
+CONFIGDIR=$CONFIGDIR
+AURDB=$AURDB
+BUILD_SCRIPT=$BUILD_SCRIPT
+EOF
+
+
+exit 0
