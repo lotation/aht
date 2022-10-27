@@ -1,6 +1,5 @@
 #!/bin/bash
-
-set -e -x
+set -e
 
 PROGRAM_NAME="idk"
 
@@ -65,11 +64,12 @@ if [ ! -e "$CONFIGFILE" ]; then
 fi
 
 BUILD_SCRIPT="$DATADIR/${PROGRAM_NAME}-build"
-sed -i "/^CONFIGFILE/c\CONFIGFILE=$CONFIGFILE" "$PROGRAM_NAME"
 
 # install
 install -Dm755 "$PROGRAM_NAME" -t $BINDIR
 install -Dm644 "${PROGRAM_NAME}-build" -t $DATADIR
+
+sed -i "/^CONFIGFILE/c\CONFIGFILE=$CONFIGFILE" "$BINDIR/$PROGRAM_NAME"
 
 cat >> "$CONFIGFILE" << EOF
 DATADIR="$DATADIR"
