@@ -9,12 +9,14 @@ dependencies=(
     'gzip'
 )
 
+printf "Checking dependencies...\t"
 for p in "${dependencies[@]}"; do
     if ! command -v "$p" > /dev/null; then
         echo "$p not found, please install it.\n" 1>&2
         exit 1
     fi    
 done
+printf "Done.\n"
 
 # data
 if [ -z ${XDG_DATA_HOME+x} ]; then
@@ -45,10 +47,12 @@ fi
 mkdir -p "$CACHEDIR"
 
 # init AUR packages database
+printf "Downloading AUR packages database...\t"
 AURDB="$CACHEDIR/packages"
 wget -q -P "$CACHEDIR" https://aur.archlinux.org/packages.gz
 gzip -q -d -c < "$CACHEDIR/packages.gz"  > "$AURDB"
 rm "$CACHEDIR/packages.gz"
+printf "Done.\n"
 
 # create config file
 if [ -z ${XDG_CONFIG_HOME+x} ]; then
@@ -80,5 +84,6 @@ AURDB="$AURDB"
 BUILD_SCRIPT="$BUILD_SCRIPT"
 EOF
 
+echo "$PROGRAM_NAME successfully installed, make sure $BINDIR is part of your \$PATH."
 
 exit 0
