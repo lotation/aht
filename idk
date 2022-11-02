@@ -10,9 +10,9 @@ function usage {
 Usage: $0 [OPTIONS] [PKGBUILD] ...
 
 This script will build a specific AUR package in an Arch Linux container 
-using a clean chroot while taking care of all the dependecies. If a PKGBUILD
-is found in the current working directory, the script will use that, otherwise
-you have to pass it as argument to the script.
+using a clean chroot while taking care of all the dependecies. 
+If a PKGBUILD is passed to the program it will use that, otherwise it 
+will look in the current directory for one.
 
 WARNING:
 Please note that it assumes you have already checked every package's PKGBUILD.
@@ -33,7 +33,7 @@ RUN reflector --protocol https --latest 5 --save /etc/pacman.d/mirrorlist
 RUN sed -i '/MAKEFLAGS/c\MAKEFLAGS=\"-j\"$(nproc --all)"\"' /etc/makepkg.conf
 RUN echo '%wheel ALL=(ALL) ALL' > /etc/sudoers.d/71-wheel
 
-COPY $build_script /usr/bin/build
+COPY $BUILD_SCRIPT /usr/bin/build
 
 RUN useradd -m -G wheel -s /bin/bash  $user \
     && yes $pkg | passwd $user \
@@ -76,30 +76,9 @@ function get_arch {
     grep "arch" PKGBUILD | head -n1 | cut -d"=" -f2
 }
 
-function get_user {
-    last | head -n1 | cut -d" " -f1 | xargs
-}
-
-function remove_whitespaces {
-    # for (( i=0; i<${#temp[@]}; i++ )) ; do echo -e "before=\"${temp[$i]}\"\t" && temp[$i]=$(echo "${temp[$i]}" | xargs) && echo -e "after=\"${temp[$i]}\"\n" ; done
-    local -n temp=$1
-    for (( i=0; i<${#temp[@]}; i++ )) ; do 
-        temp[$i]=$(echo "${temp[$i]}" | xargs)
-    done
-}
-
 
 ### START ###
 source "$CONFIGFILE"
-pkgbuild="$(find "$(pwd)" -maxdepth 1 -name "PKGBUILD")"
-pkg="$(get_pkgname)-$(get_pkgver)-$(get_pkgrel)"
-user="$pkg"
-pkg_list=(
-    'base-devel'
-    'reflector'
-    'devtools'
-    'namcap'
-)
 
 # container manager check
 # thanks https://github.com/89luca89/distrobox
@@ -108,11 +87,16 @@ if command -v podman > /dev/null; then
 elif command -v docker > /dev/null; then
     container_manager="docker"
 else
-    echo "no container manager found, please install one (podman is recommended).\n" 1>&2
+    echo "No container manager found, please install one (podman is recommended).\n" 1>&2
     exit 1
 fi
 
 # parse command line arguments
+if [ $# -eq 0 ]; then
+	usage
+	exit 1
+fi
+
 while [[ "$1" ]]; do
     case $1 in
         "-h" | "--help") 
@@ -120,7 +104,7 @@ while [[ "$1" ]]; do
             exit 0
             ;;
         "-v" | "--version")
-            echo "$0 $version"
+            echo "$PROGRAM_NAME $VERSION"
             exit 0
             ;;
         ?)
@@ -135,24 +119,43 @@ while [[ "$1" ]]; do
             ;;
     esac
 
+    # either it blocks here:
+    # $1 unbound variable
     shift
 done
 
+pkgbuild="$(find "$(pwd)" -maxdepth 1 -name "PKGBUILD")"
 while [[ "$1" ]]; do
     if [[ "$(basename "$1")" == "PKGBUILD" ]]; then
         pkgbuild="$1"
     fi
 
+    # or loops infinitely here
     shift
 done
 
+if [ -z ${pkgbuild+x} ]; then 
+    echo "PKGBUILD not found in this directory, please provide one as argument" 1>&2
+    echo "or run this script in a directory containing a PKGBUILD" 1>&2
+    exit 1
+fi
+
+dockerfile="$DATADIR/Dockerfile"
+pkg="$(get_pkgname)-$(get_pkgver)-$(get_pkgrel)"
+user="$pkg"
+pkg_list=(
+    'base-devel'
+    'devtools'
+    'namcap'
+    'reflector'
+)
 
 # do shit
-print_dockerfile > "$dockerfile"
+echo "print_dockerfile > $dockerfile "
 
-"$container_manager" build "$(pwd)"
+echo "$container_manager build $(pwd)"
 
-"$container_manager" run -it --rm 
+echo "$container_manager run -it --rm"
 
 
 
