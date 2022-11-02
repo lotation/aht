@@ -2,6 +2,7 @@
 set -e
 
 PROGRAM_NAME="aht"
+VERSION="$(git tag | head -n1)"
 
 # check dependencies
 dependencies=(
@@ -74,6 +75,8 @@ install -Dm755 "$PROGRAM_NAME" -t $BINDIR
 install -Dm644 "${PROGRAM_NAME}-build" -t $DATADIR
 
 sed -i "/^CONFIGFILE/c\CONFIGFILE=$CONFIGFILE" "$BINDIR/$PROGRAM_NAME"
+sed -i "/^VERSION/c\VERSION=$VERSION" "$BINDIR/$PROGRAM_NAME"
+sed -i "/^PROGRAM_NAME/c\PROGRAM_NAME=$PROGRAM_NAME" "$BINDIR/$PROGRAM_NAME"
 
 cat >> "$CONFIGFILE" << EOF
 DATADIR="$DATADIR"

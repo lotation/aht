@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
 
-PROGRAM_NAME="$(basename $0)"
-VERSION=0.1
+PROGRAM_NAME="$(:)"
+VERSION="$(:)"
 CONFIGFILE=$(:)
 
 function usage {
