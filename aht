@@ -20,6 +20,7 @@ Please note that it assumes you have already checked every package's PKGBUILD.
 OPTIONS:
     -h, --help          display this help and exit
     -v, --version       output version information and exit
+    
 EOF
 }
 
