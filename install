@@ -6,16 +6,17 @@ VERSION="$(git tag | head -n1)"
 
 # check dependencies
 dependencies=(
+    'git'
     'wget'
     'gzip'
 )
 
-printf "Checking dependencies...\t"
+printf "Checking dependencies...\n"
 for p in "${dependencies[@]}"; do
     if ! command -v "$p" > /dev/null; then
-        echo "$p not found, please install it.\n" 1>&2
+        echo -e "$p not found, please install it.\n" 1>&2
         exit 1
-    fi    
+    fi
 done
 printf "Done.\n"
 
@@ -68,11 +69,9 @@ if [ ! -e "$CONFIGFILE" ]; then
     echo -e "# $PROGRAM_NAME configuration file\n" > "$CONFIGFILE"
 fi
 
-BUILD_SCRIPT="$DATADIR/${PROGRAM_NAME}-build"
-
 # install
 install -Dm755 "$PROGRAM_NAME" -t $BINDIR
-install -Dm644 "${PROGRAM_NAME}-build" -t $DATADIR
+install -Dm644 "build" -t $DATADIR
 
 sed -i "/^CONFIGFILE/c\CONFIGFILE=$CONFIGFILE" "$BINDIR/$PROGRAM_NAME"
 sed -i "/^VERSION/c\VERSION=$VERSION" "$BINDIR/$PROGRAM_NAME"
@@ -87,6 +86,6 @@ AURDB="$AURDB"
 BUILD_SCRIPT="$BUILD_SCRIPT"
 EOF
 
-echo "$PROGRAM_NAME successfully installed, make sure $BINDIR is part of your \$PATH."
-
+echo "$PROGRAM_NAME successfully installed."
+echo
 exit 0
